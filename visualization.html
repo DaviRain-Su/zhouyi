@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>周易六十四卦可视化与解释</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+                overflow: hidden;
+            }
+            canvas {
+                display: block;
+            }
+            #controls {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+            }
+            button {
+                margin: 5px;
+                padding: 10px;
+            }
+            #explanation {
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(255, 255, 255, 0.7);
+                padding: 10px;
+                max-width: 300px;
+            }
+            #guaSelector {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="controls">
+            <button id="prevGua">上一卦</button>
+            <button id="nextGua">下一卦</button>
+            <button id="combineGua">组合卦象</button>
+        </div>
+        <div id="guaSelector">
+            <select id="upperGua"></select>
+            <select id="lowerGua"></select>
+        </div>
+        <div id="explanation"></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script>
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000,
+            );
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            camera.position.z = 10;
+
+            const bagua = [
+                {
+                    name: "乾",
+                    lines: [1, 1, 1],
+                    color: 0xffffff,
+                    explanation: "乾为天，象征纯阳、刚健、创造和领导",
+                },
+                {
+                    name: "兑",
+                    lines: [1, 1, 0],
+                    color: 0xffa500,
+                    explanation: "兑为泽，象征喜悦、愉快、和谐与满足",
+                },
+                {
+                    name: "离",
+                    lines: [1, 0, 1],
+                    color: 0xff0000,
+                    explanation: "离为火，象征光明、美丽、文明和智慧",
+                },
+                {
+                    name: "震",
+                    lines: [1, 0, 0],
+                    color: 0x00ff00,
+                    explanation: "震为雷，象征动荡、激励、新生和成长",
+                },
+                {
+                    name: "巽",
+                    lines: [0, 1, 1],
+                    color: 0x800080,
+                    explanation: "巽为风，象征柔顺、渐进、谦逊和顺从",
+                },
+                {
+                    name: "坎",
+                    lines: [0, 1, 0],
+                    color: 0x0000ff,
+                    explanation: "坎为水，象征险难、隐藏、智慧和谋略",
+                },
+                {
+                    name: "艮",
+                    lines: [0, 0, 1],
+                    color: 0x8b4513,
+                    explanation: "艮为山，象征稳重、停止、内敛和守成",
+                },
+                {
+                    name: "坤",
+                    lines: [0, 0, 0],
+                    color: 0xffff00,
+                    explanation: "坤为地，象征纯阴、柔顺、包容和滋养",
+                },
+            ];
+
+            const sixtyFourGua = [];
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 8; j++) {
+                    sixtyFourGua.push({
+                        name: bagua[i].name + bagua[j].name,
+                        upper: bagua[i],
+                        lower: bagua[j],
+                        lines: [...bagua[i].lines, ...bagua[j].lines],
+                        color: new THREE.Color(bagua[i].color).lerp(
+                            new THREE.Color(bagua[j].color),
+                            0.5,
+                        ),
+                        explanation: `${bagua[i].name}${bagua[j].name}卦：上${bagua[i].name}下${bagua[j].name}，${bagua[i].explanation}，${bagua[j].explanation}。这个卦象代表了[此处需要添加具体的卦象解释]。`,
+                    });
+                }
+            }
+
+            let currentGua = 0;
+            let guaObject;
+
+            function createGua(gua) {
+                if (guaObject) scene.remove(guaObject);
+                guaObject = new THREE.Group();
+
+                for (let i = 0; i < 6; i++) {
+                    const material = new THREE.MeshPhongMaterial({
+                        color: gua.color,
+                    });
+                    if (gua.lines[i] === 1) {
+                        const geometry = new THREE.BoxGeometry(2, 0.3, 0.3);
+                        const line = new THREE.Mesh(geometry, material);
+                        line.position.y = (i - 2.5) * 0.8;
+                        line.castShadow = true;
+                        line.receiveShadow = true;
+                        guaObject.add(line);
+                    } else {
+                        const geometry = new THREE.BoxGeometry(0.9, 0.3, 0.3);
+                        const leftLine = new THREE.Mesh(geometry, material);
+                        const rightLine = new THREE.Mesh(geometry, material);
+                        leftLine.position.set(-0.55, (i - 2.5) * 0.8, 0);
+                        rightLine.position.set(0.55, (i - 2.5) * 0.8, 0);
+                        leftLine.castShadow = true;
+                        leftLine.receiveShadow = true;
+                        rightLine.castShadow = true;
+                        rightLine.receiveShadow = true;
+                        guaObject.add(leftLine);
+                        guaObject.add(rightLine);
+                    }
+                }
+
+                scene.add(guaObject);
+                setExplanation(gua);
+            }
+
+            function addLights() {
+                const ambientLight = new THREE.AmbientLight(0x404040);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(
+                    0xffffff,
+                    0.5,
+                );
+                directionalLight.position.set(5, 5, 5);
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+
+                const pointLight = new THREE.PointLight(0xffffff, 0.5);
+                pointLight.position.set(-5, 5, 5);
+                scene.add(pointLight);
+            }
+
+            function setExplanation(gua) {
+                let text = `<h3>${gua.name}卦</h3>`;
+                text += `<p><strong>上卦：</strong>${gua.upper.name}，<strong>下卦：</strong>${gua.lower.name}</p>`;
+                text += `<p><strong>卦象解释：</strong>${gua.explanation}</p>`;
+                text += "<p>点击各爻可查看详细含义。</p>";
+                document.getElementById("explanation").innerHTML = text;
+            }
+
+            function initGuaSelectors() {
+                const upperSelect = document.getElementById("upperGua");
+                const lowerSelect = document.getElementById("lowerGua");
+                bagua.forEach((gua, index) => {
+                    upperSelect.options[upperSelect.options.length] =
+                        new Option(gua.name, index);
+                    lowerSelect.options[lowerSelect.options.length] =
+                        new Option(gua.name, index);
+                });
+            }
+
+            addLights();
+            createGua(sixtyFourGua[currentGua]);
+            initGuaSelectors();
+
+            document.getElementById("prevGua").addEventListener("click", () => {
+                currentGua = (currentGua - 1 + 64) % 64;
+                createGua(sixtyFourGua[currentGua]);
+            });
+
+            document.getElementById("nextGua").addEventListener("click", () => {
+                currentGua = (currentGua + 1) % 64;
+                createGua(sixtyFourGua[currentGua]);
+            });
+
+            document
+                .getElementById("combineGua")
+                .addEventListener("click", () => {
+                    const upperIndex =
+                        document.getElementById("upperGua").value;
+                    const lowerIndex =
+                        document.getElementById("lowerGua").value;
+                    const combinedGua = sixtyFourGua.find(
+                        (gua) =>
+                            gua.upper === bagua[upperIndex] &&
+                            gua.lower === bagua[lowerIndex],
+                    );
+                    createGua(combinedGua);
+                });
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            window.addEventListener("resize", onWindowResize, false);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                if (guaObject) {
+                    guaObject.rotation.y += 0.005;
+                }
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // 添加爻的点击事件
+            renderer.domElement.addEventListener(
+                "click",
+                onDocumentMouseClick,
+                false,
+            );
+
+            function onDocumentMouseClick(event) {
+                event.preventDefault();
+                const mouse = new THREE.Vector2();
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+
+                const intersects = raycaster.intersectObjects(
+                    guaObject.children,
+                    true,
+                );
+
+                if (intersects.length > 0) {
+                    const clickedYao = intersects[0].object;
+                    const yaoIndex = Math.floor(
+                        (clickedYao.position.y + 2.5) / 0.8,
+                    );
+                    const currentGuaObject = sixtyFourGua[currentGua];
+                    const yaoName =
+                        currentGuaObject.lines[5 - yaoIndex] === 1
+                            ? "阳爻"
+                            : "阴爻";
+                    const yaoExplanation = `第${6 - yaoIndex}爻：${yaoName}\n[此处需要添加该爻的详细解释]`;
+                    alert(yaoExplanation);
+                }
+            }
+        </script>
+    </body>
+</html>
