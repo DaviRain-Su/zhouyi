@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>周易六十四卦可视化与解释</title>
+        <title>周易六十四卦可视化与详细解释</title>
         <style>
             body {
                 margin: 0;
@@ -24,16 +24,44 @@
             }
             #explanation {
                 position: absolute;
-                bottom: 10px;
-                left: 10px;
-                background: rgba(255, 255, 255, 0.7);
+                top: 10px;
+                right: 10px;
+                background: rgba(255, 255, 255, 0.8);
                 padding: 10px;
-                max-width: 300px;
+                max-width: 400px;
+                max-height: 80vh;
+                overflow-y: auto;
             }
             #guaSelector {
                 position: absolute;
-                top: 10px;
-                right: 10px;
+                bottom: 10px;
+                left: 10px;
+            }
+            .tab {
+                overflow: hidden;
+                border: 1px solid #ccc;
+                background-color: #f1f1f1;
+            }
+            .tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 14px 16px;
+                transition: 0.3s;
+            }
+            .tab button:hover {
+                background-color: #ddd;
+            }
+            .tab button.active {
+                background-color: #ccc;
+            }
+            .tabcontent {
+                display: none;
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                border-top: none;
             }
         </style>
     </head>
@@ -41,13 +69,38 @@
         <div id="controls">
             <button id="prevGua">上一卦</button>
             <button id="nextGua">下一卦</button>
-            <button id="combineGua">组合卦象</button>
         </div>
         <div id="guaSelector">
             <select id="upperGua"></select>
             <select id="lowerGua"></select>
+            <button id="combineGua">组合卦象</button>
         </div>
-        <div id="explanation"></div>
+        <div id="explanation">
+            <h2 id="guaTitle"></h2>
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'BasicInfo')">
+                    基本信息
+                </button>
+                <button
+                    class="tablinks"
+                    onclick="openTab(event, 'DetailedExplanation')"
+                >
+                    详细解释
+                </button>
+                <button class="tablinks" onclick="openTab(event, 'Yao')">
+                    爻辞
+                </button>
+            </div>
+            <div id="BasicInfo" class="tabcontent">
+                <p id="basicInfo"></p>
+            </div>
+            <div id="DetailedExplanation" class="tabcontent">
+                <p id="detailedExplanation"></p>
+            </div>
+            <div id="Yao" class="tabcontent">
+                <p id="yaoExplanation"></p>
+            </div>
+        </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script>
             const scene = new THREE.Scene();
@@ -128,10 +181,469 @@
                             new THREE.Color(bagua[j].color),
                             0.5,
                         ),
-                        explanation: `${bagua[i].name}${bagua[j].name}卦：上${bagua[i].name}下${bagua[j].name}，${bagua[i].explanation}，${bagua[j].explanation}。这个卦象代表了[此处需要添加具体的卦象解释]。`,
+                        basicInfo: `${bagua[i].name}${bagua[j].name}卦：上${bagua[i].name}下${bagua[j].name}。${bagua[i].explanation}，${bagua[j].explanation}。`,
+                        detailedExplanation: {
+                            overview: `${bagua[i].name}${bagua[j].name}卦是...`,
+                            meaning: `这个卦象代表...`,
+                            guaCi: `卦辞：...`,
+                            xiang: `象曰：...`,
+                            application: {
+                                general: "在一般情况下，这个卦象意味着...",
+                                career: "在事业方面，这个卦象暗示...",
+                                relationships: "在人际关系中，这个卦象建议...",
+                                health: "关于健康，这个卦象提醒...",
+                                spirituality: "在精神层面，这个卦象启示...",
+                            },
+                            story: "与这个卦象相关的一个典故或历史事件是...",
+                        },
+                        yaoExplanation: [
+                            {
+                                position: "初爻",
+                                content: "...",
+                                meaning: "这一爻的含义是...",
+                                action: "建议的行动是...",
+                            },
+                            {
+                                position: "二爻",
+                                content: "...",
+                                meaning: "这一爻的含义是...",
+                                action: "建议的行动是...",
+                            },
+                            {
+                                position: "三爻",
+                                content: "...",
+                                meaning: "这一爻的含义是...",
+                                action: "建议的行动是...",
+                            },
+                            {
+                                position: "四爻",
+                                content: "...",
+                                meaning: "这一爻的含义是...",
+                                action: "建议的行动是...",
+                            },
+                            {
+                                position: "五爻",
+                                content: "...",
+                                meaning: "这一爻的含义是...",
+                                action: "建议的行动是...",
+                            },
+                            {
+                                position: "上爻",
+                                content: "...",
+                                meaning: "这一爻的含义是...",
+                                action: "建议的行动是...",
+                            },
+                        ],
+                        relationships: {
+                            complementary: `与${bagua[i].name}${bagua[j].name}卦互补的卦象是...`,
+                            opposite: `与${bagua[i].name}${bagua[j].name}卦相对的卦象是...`,
+                            transformation: `${bagua[i].name}${bagua[j].name}卦可能会演变为...卦`,
+                        },
                     });
                 }
             }
+
+            sixtyFourGua[0] = {
+                name: "乾乾",
+                upper: bagua[0],
+                lower: bagua[0],
+                lines: [1, 1, 1, 1, 1, 1],
+                color: new THREE.Color(0xffffff),
+                basicInfo:
+                    "乾卦：上下卦皆为乾。象征天，代表纯阳、刚健、创造和领导。",
+                detailedExplanation: {
+                    overview:
+                        "乾卦是易经六十四卦中的第一卦，代表纯粹的阳刚之气。",
+                    meaning:
+                        "这个卦象象征着强大的创造力、领导力和持续不断的努力。",
+                    guaCi: "卦辞：乾：元，亨，利，贞。",
+                    xiang: "象曰：天行健，君子以自强不息。",
+                    application: {
+                        general:
+                            "在一般情况下，乾卦意味着要保持积极进取的态度，勇于开创新局面。",
+                        career: "在事业方面，乾卦暗示着领导地位和巨大的发展潜力，但也需要承担相应的责任。",
+                        relationships:
+                            "在人际关系中，乾卦建议要以开放、正直的态度对待他人，同时也要懂得适当谦逊。",
+                        health: "关于健康，乾卦提醒要保持旺盛的精力，但也要注意不要过度劳累。",
+                        spirituality:
+                            "在精神层面，乾卦启示我们要追求持续的自我完善和精神升华。",
+                    },
+                    story: "在中国古代，乾卦常被用来形容理想的君主形象。例如，尧、舜、禹等圣王就常被比作乾卦，象征其高尚的品德和卓越的领导才能。",
+                },
+                yaoExplanation: [
+                    {
+                        position: "初九",
+                        content: "潜龙勿用。",
+                        meaning:
+                            "潜藏的龙，暂时不要施展才能。比喻具有才能但尚未到施展的时机。",
+                        action: "此时应当耐心等待，积蓄力量，为未来的行动做好准备。",
+                    },
+                    {
+                        position: "九二",
+                        content: "见龙在田，利见大人。",
+                        meaning:
+                            "龙出现在田野中，有利于见到贵人。象征才能开始显露，有机会得到赏识。",
+                        action: "可以开始逐步展示自己的能力，寻求有影响力人士的支持。",
+                    },
+                    {
+                        position: "九三",
+                        content: "君子终日乾乾，夕惕若，厉无咎。",
+                        meaning:
+                            "君子整日勤勉不懈，即使到了晚上也保持警惕，虽然有危险但不会有过错。",
+                        action: "应当保持勤奋和警惕，不断提升自己，这样即使面临挑战也能安然度过。",
+                    },
+                    {
+                        position: "九四",
+                        content: "或跃在渊，无咎。",
+                        meaning:
+                            "或许跃在深渊之中，但无灾祸。象征在关键时刻要果断行动。",
+                        action: "面对机遇时要敢于尝试，即使有风险也要勇于冒险。",
+                    },
+                    {
+                        position: "九五",
+                        content: "飞龙在天，利见大人。",
+                        meaning:
+                            "飞龙在天，有利于见大人。象征才能得到充分发挥，处于最佳位置。",
+                        action: "此时正是施展才能的最好时机，应当充分利用自己的影响力。",
+                    },
+                    {
+                        position: "上九",
+                        content: "亢龙有悔。",
+                        meaning:
+                            "龙飞得太高，会有后悔。警示过分自满和强硬可能带来的危险。",
+                        action: "处于顶峰时要保持谦逊，警惕骄傲自满带来的危险。",
+                    },
+                ],
+                relationships: {
+                    complementary: "与乾卦互补的卦象是坤卦，象征天地相辅相成。",
+                    opposite:
+                        "与乾卦相对的卦象是坤卦，代表阴阳对立统一的关系。",
+                    transformation:
+                        "乾卦可能会演变为姤卦（天风姤），表示阳极生阴的变化。",
+                },
+            };
+
+            // 坤卦（第二卦）
+            sixtyFourGua[1] = {
+                name: "坤坤",
+                upper: bagua[7],
+                lower: bagua[7],
+                lines: [0, 0, 0, 0, 0, 0],
+                color: new THREE.Color(0xffff00),
+                basicInfo:
+                    "坤卦：上下卦皆为坤。象征地，代表纯阴、柔顺、包容和滋养。",
+                detailedExplanation: {
+                    overview:
+                        "坤卦是易经六十四卦中的第二卦，代表纯粹的阴柔之气。",
+                    meaning:
+                        "这个卦象象征着大地的包容性、母性的滋养力，以及谦逊和顺从的品质。",
+                    guaCi: "卦辞：坤：元亨，利牝马之贞。君子有攸往，先迷后得主。利西南得朋，东北丧朋。安贞吉。",
+                    xiang: "象曰：地势坤，君子以厚德载物。",
+                    application: {
+                        general:
+                            "在一般情况下，坤卦意味着要保持谦逊、包容的态度，顺应自然和他人。",
+                        career: "在事业方面，坤卦暗示着要脚踏实地，稳扎稳打，不急于求成。合作和支持他人会带来好结果。",
+                        relationships:
+                            "在人际关系中，坤卦建议要以温和、包容的态度对待他人，善于倾听和理解。",
+                        health: "关于健康，坤卦提醒要注意调养身体，保持平和的心态，注重营养均衡。",
+                        spirituality:
+                            "在精神层面，坤卦启示我们要保持内心的宁静和包容，接纳世界的多样性。",
+                    },
+                    story: "在中国传统文化中，坤卦常被用来形容理想的母亲形象或贤良淑德的女性。例如，周文王的妻子太姒就被称赞具有坤德，象征其温柔贤淑、相夫教子的品格。",
+                },
+                yaoExplanation: [
+                    {
+                        position: "初六",
+                        content: "履霜，坚冰至。",
+                        meaning:
+                            "踩到了霜，坚硬的冰很快就要到来。比喻要对事物的发展趋势保持警惕。",
+                        action: "应当对事物的初始征兆保持敏感，并为未来可能的变化做好准备。",
+                    },
+                    {
+                        position: "六二",
+                        content: "直方大，不习无不利。",
+                        meaning:
+                            "地面平直方正，没有经过耕作也不会有什么不利。象征自然质朴的品格会带来好处。",
+                        action: "保持正直、质朴的品格，不需刻意追求，自然会带来好结果。",
+                    },
+                    {
+                        position: "六三",
+                        content: "含章可贞。或从王事，无成有终。",
+                        meaning:
+                            "包含美好的品德，可以正固。或者从事王室的事务，虽然不能马上看到成果，但最终会有好的结局。",
+                        action: "应当坚持自己的品德，即使暂时看不到成果，也要坚持到底。",
+                    },
+                    {
+                        position: "六四",
+                        content: "括囊，无咎无誉。",
+                        meaning:
+                            "扎紧口袋，不会有灾祸，也不会有称赞。象征谨慎行事，不张扬自己。",
+                        action: "此时应当谨慎低调，不要过分表现自己，也不要随意评论他人。",
+                    },
+                    {
+                        position: "六五",
+                        content: "黄裳，元吉。",
+                        meaning:
+                            "穿着黄色的裙子，大吉大利。象征崇高的地位和美德。",
+                        action: "此时应当保持高尚的品德，会得到好的结果和崇高的声誉。",
+                    },
+                    {
+                        position: "上六",
+                        content: "龙战于野，其血玄黄。",
+                        meaning:
+                            "龙在旷野里战斗，鲜血呈现玄黄之色。象征阴阳交争，变化剧烈。",
+                        action: "面对剧烈的变化，应当保持警惕，避免卷入不必要的争斗。",
+                    },
+                ],
+                relationships: {
+                    complementary: "与坤卦互补的卦象是乾卦，象征天地相辅相成。",
+                    opposite:
+                        "与坤卦相对的卦象是乾卦，代表阴阳对立统一的关系。",
+                    transformation:
+                        "坤卦可能会演变为复卦（地雷复），表示阴极生阳的变化。",
+                },
+            };
+
+            // 屯卦（第三卦）
+            sixtyFourGua[2] = {
+                name: "坎震",
+                upper: bagua[5], // 坎
+                lower: bagua[3], // 震
+                lines: [0, 1, 0, 1, 0, 0],
+                color: new THREE.Color(0x0000ff).lerp(
+                    new THREE.Color(0x00ff00),
+                    0.5,
+                ),
+                basicInfo:
+                    "屯卦：上坎下震。坎为水，震为雷，象征困难中孕育新生。",
+                detailedExplanation: {
+                    overview:
+                        "屯卦是易经六十四卦中的第三卦，代表初始的困难和潜在的生机。",
+                    meaning:
+                        "这个卦象象征着开始时的艰难，如同种子初萌，需要时间和耐心来突破障碍。",
+                    guaCi: "卦辞：屯：元亨，利贞。勿用有攸往，利建侯。",
+                    xiang: "象曰：云雷屯，君子以经纶。",
+                    application: {
+                        general:
+                            "在一般情况下，屯卦意味着要在困难中保持耐心和毅力，为未来的发展积蓄力量。",
+                        career: "在事业方面，屯卦暗示着可能会遇到初始的困难，但只要坚持不懈，终会有所突破。",
+                        relationships:
+                            "在人际关系中，屯卦建议要在困难时期互相支持，共同度过难关。",
+                        health: "关于健康，屯卦提醒要注意调养身体，特别是在季节交替或环境变化的时候。",
+                        spirituality:
+                            "在精神层面，屯卦启示我们要在逆境中保持希望，相信困难终将过去。",
+                    },
+                    story: "屯卦的意象常被用来形容国家初建或事业初创的艰难时期。例如，古代圣王禹治水的过程，就常被比作屯卦的历程，象征着在巨大困难中开创新局面的精神。",
+                },
+                yaoExplanation: [
+                    {
+                        position: "初九",
+                        content: "磐桓，利居贞，利建侯。",
+                        meaning:
+                            "徘徊不前，利于安守正道，有利于建立诸侯。象征初期的犹豫和谨慎。",
+                        action: "此时应当谨慎行事，稳固根基，为未来的发展做准备。",
+                    },
+                    {
+                        position: "六二",
+                        content:
+                            "屯如邅如，乘马班如。匪寇婚媾，女子贞不字，十年乃字。",
+                        meaning:
+                            "困难重重，如同乘马难行。不是强盗来了，而是来求婚的。女子贞洁不肯答应，十年后才嫁人。",
+                        action: "面对困难时不要轻易放弃，保持坚持和忍耐，时机成熟时自然会有好结果。",
+                    },
+                    {
+                        position: "六三",
+                        content: "即鹿无虞，惟入于林中。君子几不如舍，往吝。",
+                        meaning:
+                            "追逐鹿却没有向导，只顾着进入深林。君子意识到危险而及时放弃，继续前进会有灾难。",
+                        action: "要认清形势，不要盲目行动。适时放弃不合理的追求，避免陷入更大的困境。",
+                    },
+                    {
+                        position: "六四",
+                        content: "乘马班如，求婚媾，往吉无不利。",
+                        meaning:
+                            "乘车艰难前行，前去求婚，前进吉祥没有不利。象征在困难中坚持追求目标。",
+                        action: "虽然道路艰难，但只要目标正确，就应当坚持前进，最终会有好的结果。",
+                    },
+                    {
+                        position: "九五",
+                        content: "屯其膏，小贞吉，大贞凶。",
+                        meaning:
+                            "积聚粮食，小事谨慎则吉祥，大事谨慎则凶险。象征在困难时期要量力而行。",
+                        action: "在困难时期，应当注重积累和保存实力，可以做一些小事，但不宜有大的举动。",
+                    },
+                    {
+                        position: "上六",
+                        content: "乘马班如，泣血涟如。",
+                        meaning:
+                            "乘车艰难前行，哭得泪流满面。象征极度困难的处境。",
+                        action: "处于极其困难的境地时，要保持内心的坚强，相信困难终将过去。",
+                    },
+                ],
+                relationships: {
+                    complementary:
+                        "与屯卦互补的卦象是蒙卦，象征启蒙教育和开导。",
+                    opposite: "与屯卦相对的卦象是随卦，代表顺从和适应。",
+                    transformation:
+                        "屯卦可能会演变为既济卦（水火既济），表示度过难关，获得成功。",
+                },
+            };
+
+            // 蒙卦（第四卦）
+            sixtyFourGua[3] = {
+                name: "艮坎",
+                upper: bagua[6], // 艮
+                lower: bagua[5], // 坎
+                lines: [0, 0, 1, 0, 1, 0],
+                color: new THREE.Color(0x8b4513).lerp(
+                    new THREE.Color(0x0000ff),
+                    0.5,
+                ),
+                basicInfo: "蒙卦：上艮下坎。艮为山，坎为水，象征蒙昧中求启蒙。",
+                detailedExplanation: {
+                    overview:
+                        "蒙卦是易经六十四卦中的第四卦，代表蒙昧无知和寻求启蒙。",
+                    meaning:
+                        "这个卦象象征着初学者的困惑和求教的过程，如同山下的泉水冲出，寻求明路。",
+                    guaCi: "卦辞：蒙：亨。匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。",
+                    xiang: "象曰：山下出泉，蒙；君子以果行育德。",
+                    application: {
+                        general:
+                            "在一般情况下，蒙卦意味着要虚心学习，寻求指导，不耻下问。",
+                        career: "在事业方面，蒙卦暗示着可能处于学习或适应新环境的阶段，要保持开放的心态，虚心求教。",
+                        relationships:
+                            "在人际关系中，蒙卦建议要诚实表达自己的不解，同时也要耐心对待他人的困惑。",
+                        health: "关于健康，蒙卦提醒要注意学习健康知识，不要讳疾忌医。",
+                        spirituality:
+                            "在精神层面，蒙卦启示我们要保持如孩童般的好奇心和学习欲望。",
+                    },
+                    story: "蒙卦的意象常被用来形容教育的重要性。例如，孔子强调及时施教的重要性，就如同蒙卦所示：要在人年少无知时及时引导，否则错过时机就难以纠正。",
+                },
+                yaoExplanation: [
+                    {
+                        position: "初六",
+                        content: "发蒙，利用刑人，用说桎梏，以往吝。",
+                        meaning:
+                            "启蒙教育开始，利于惩戒，用说教的方式解除束缚，这样做会有困难。",
+                        action: "在开始学习时，要接受必要的规矩和约束，但也要注意循循善诱，不可过于严厉。",
+                    },
+                    {
+                        position: "九二",
+                        content: "包蒙吉，纳妇吉，子克家。",
+                        meaning:
+                            "包容蒙昧是吉祥的，娶妻吉祥，儿子能够治理家族。",
+                        action: "应当以包容的心态对待无知和错误，这样会带来好的结果。",
+                    },
+                    {
+                        position: "六三",
+                        content: "勿用取女，见金夫，不有躬，无攸利。",
+                        meaning:
+                            "不要娶这个女子，她见到有钱的男人就动心，不会对你忠诚，没有什么好处。",
+                        action: "要谨慎选择伴侣或合作对象，不要被表面的利益迷惑。",
+                    },
+                    {
+                        position: "六四",
+                        content: "困蒙，吝。",
+                        meaning: "蒙昧到了困难的地步，会有灾祸。",
+                        action: "当感到特别困惑时，要及时寻求帮助，不要固步自封。",
+                    },
+                    {
+                        position: "六五",
+                        content: "童蒙，吉。",
+                        meaning: "天真无邪的蒙昧，吉祥。",
+                        action: "保持谦逊和虚心学习的态度，会带来好运。",
+                    },
+                    {
+                        position: "上九",
+                        content: "击蒙，不利为寇，利御寇。",
+                        meaning: "击退蒙昧，不利于做坏事，有利于防御坏人。",
+                        action: "要坚决摒弃愚昧，但不要用来害人，而应该用来保护自己和他人。",
+                    },
+                ],
+                relationships: {
+                    complementary: "与蒙卦互补的卦象是屯卦，象征困难中的启蒙。",
+                    opposite: "与蒙卦相对的卦象是损卦，代表损益和取舍。",
+                    transformation:
+                        "蒙卦可能会演变为需卦（水天需），表示从蒙昧到需要等待时机。",
+                },
+            };
+
+            // 需卦（第五卦）
+            sixtyFourGua[4] = {
+                name: "坎乾",
+                upper: bagua[5], // 坎
+                lower: bagua[0], // 乾
+                lines: [0, 1, 0, 1, 1, 1],
+                color: new THREE.Color(0x0000ff).lerp(
+                    new THREE.Color(0xffffff),
+                    0.5,
+                ),
+                basicInfo: "需卦：上坎下乾。坎为水，乾为天，象征等待时机。",
+                detailedExplanation: {
+                    overview: "需卦是易经六十四卦中的第五卦，代表等待和准备。",
+                    meaning:
+                        "这个卦象象征着饥饿和需求，如同天上的云等待化为雨水，教导人们要有耐心等待时机。",
+                    guaCi: "卦辞：需：有孚，光亨，贞吉。利涉大川。",
+                    xiang: "象曰：云上于天，需；君子以饮食宴乐。",
+                    application: {
+                        general:
+                            "在一般情况下，需卦意味着要耐心等待，同时做好充分准备。",
+                        career: "在事业方面，需卦暗示着可能需要等待适当的时机，但不是消极等待，而是要积极准备。",
+                        relationships:
+                            "在人际关系中，需卦建议要有耐心，不要急于求成，给彼此适当的空间和时间。",
+                        health: "关于健康，需卦提醒要注意营养均衡，不要暴饮暴食，保持规律的生活习惯。",
+                        spirituality:
+                            "在精神层面，需卦启示我们要学会等待和冥想，在静中求动。",
+                    },
+                    story: "需卦的智慧在中国历史上多次得到应用。例如，诸葛亮在隆中隐居时，耐心等待机会，最终辅佐刘备成就大业，就是需卦精神的典型体现。",
+                },
+                yaoExplanation: [
+                    {
+                        position: "初九",
+                        content: "需于郊，利用恒，无咎。",
+                        meaning: "在郊外等待，利于持之以恒，无灾祸。",
+                        action: "当处于起步阶段时，要耐心等待，同时持续努力，不要急于求成。",
+                    },
+                    {
+                        position: "九二",
+                        content: "需于沙，小有言，终吉。",
+                        meaning: "在沙地上等待，会有小小的闲言，最终吉祥。",
+                        action: "面对困难环境时，要保持耐心，不要在意小的挫折和批评，坚持下去会有好结果。",
+                    },
+                    {
+                        position: "九三",
+                        content: "需于泥，致寇至。",
+                        meaning: "在泥泞中等待，会招致敌人来犯。",
+                        action: "处于困境时要警惕，不要被环境所困，否则可能会遭遇更大的麻烦。",
+                    },
+                    {
+                        position: "六四",
+                        content: "需于血，出自穴。",
+                        meaning: "在血泊中等待，从洞穴中出来。",
+                        action: "即使在危险的处境中，也要保持希望，寻找脱离困境的机会。",
+                    },
+                    {
+                        position: "九五",
+                        content: "需于酒食，贞吉。",
+                        meaning: "等待饮酒吃饭，正固吉祥。",
+                        action: "在舒适的环境中等待时，要保持警惕和节制，不要沉溺于安逸。",
+                    },
+                    {
+                        position: "上六",
+                        content: "入于穴，有不速之客三人来，敬之终吉。",
+                        meaning:
+                            "进入洞穴，有三个不速之客来访，恭敬地对待他们最终会吉祥。",
+                        action: "即使在隐退的状态，也要保持开放的心态，善待意外的机遇，可能带来转机。",
+                    },
+                ],
+                relationships: {
+                    complementary:
+                        "与需卦互补的卦象是讼卦，象征等待后的争讼或决断。",
+                    opposite: "与需卦相对的卦象是颐卦，代表滋养和培育。",
+                    transformation:
+                        "需卦可能会演变为既济卦（水火既济），表示等待后的成功。",
+                },
+            };
 
             let currentGua = 0;
             let guaObject;
@@ -188,11 +700,23 @@
             }
 
             function setExplanation(gua) {
-                let text = `<h3>${gua.name}卦</h3>`;
-                text += `<p><strong>上卦：</strong>${gua.upper.name}，<strong>下卦：</strong>${gua.lower.name}</p>`;
-                text += `<p><strong>卦象解释：</strong>${gua.explanation}</p>`;
-                text += "<p>点击各爻可查看详细含义。</p>";
-                document.getElementById("explanation").innerHTML = text;
+                document.getElementById("guaTitle").textContent =
+                    gua.name + "卦";
+                document.getElementById("basicInfo").innerHTML = gua.basicInfo;
+                document.getElementById("detailedExplanation").innerHTML =
+                    gua.detailedExplanation;
+                document.getElementById("yaoExplanation").innerHTML =
+                    gua.yaoExplanation
+                        .map(
+                            (yao, index) =>
+                                `<p><strong>第${index + 1}爻：</strong>${yao}</p>`,
+                        )
+                        .join("");
+
+                // 默认显示基本信息标签页
+                document.getElementById("BasicInfo").style.display = "block";
+                document.getElementsByClassName("tablinks")[0].className +=
+                    " active";
             }
 
             function initGuaSelectors() {
@@ -253,40 +777,21 @@
 
             animate();
 
-            // 添加爻的点击事件
-            renderer.domElement.addEventListener(
-                "click",
-                onDocumentMouseClick,
-                false,
-            );
-
-            function onDocumentMouseClick(event) {
-                event.preventDefault();
-                const mouse = new THREE.Vector2();
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, camera);
-
-                const intersects = raycaster.intersectObjects(
-                    guaObject.children,
-                    true,
-                );
-
-                if (intersects.length > 0) {
-                    const clickedYao = intersects[0].object;
-                    const yaoIndex = Math.floor(
-                        (clickedYao.position.y + 2.5) / 0.8,
-                    );
-                    const currentGuaObject = sixtyFourGua[currentGua];
-                    const yaoName =
-                        currentGuaObject.lines[5 - yaoIndex] === 1
-                            ? "阳爻"
-                            : "阴爻";
-                    const yaoExplanation = `第${6 - yaoIndex}爻：${yaoName}\n[此处需要添加该爻的详细解释]`;
-                    alert(yaoExplanation);
+            function openTab(evt, tabName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
                 }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(
+                        " active",
+                        "",
+                    );
+                }
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
             }
         </script>
     </body>
