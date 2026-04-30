@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap");
+
+body {
+  font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+  background: #0a0a0a;
+  color: #e8e8e8;
+}
+
+/* Yao line styles */
+.yao-line {
+  position: relative;
+  height: 12px;
+  margin: 6px 0;
+}
+
+.yao-yang {
+  background: #d4a843;
+  border-radius: 2px;
+}
+
+.yao-yin {
+  background: transparent;
+}
+
+.yao-yin::before,
+.yao-yin::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: #d4a843;
+  border-radius: 2px;
+  width: 45%;
+}
+
+.yao-yin::before {
+  left: 0;
+}
+
+.yao-yin::after {
+  right: 0;
+}
+
+.yao-changing {
+  box-shadow: 0 0 8px rgba(212, 168, 67, 0.6);
+}
+
+.yao-changing::after {
+  box-shadow: 0 0 8px rgba(212, 168, 67, 0.6);
+}
+
+/* Wallet adapter overrides */
+.wallet-adapter-button {
+  font-family: "Noto Serif SC", serif !important;
+  background: linear-gradient(135deg, #b8860b, #d4a843) !important;
+  border-radius: 8px !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: #1a1a1a !important;
+}

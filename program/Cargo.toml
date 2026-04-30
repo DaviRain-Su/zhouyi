@@ -1,0 +1,17 @@
+[package]
+name = "zhouyi-program"
+version = "0.1.0"
+edition = "2021"
+description = "Zhou Yi (周易) Oracle - I Ching hexagram divination on Solana"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+pinocchio = { version = "0.11", features = ["cpi"] }
+pinocchio-system = "0.6"
+pinocchio-log = "0.5"
+
+[features]
+default = []
+bpf-entrypoint = []

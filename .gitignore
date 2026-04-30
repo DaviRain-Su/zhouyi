@@ -1,0 +1,26 @@
+# Solana
+program-keypair.json
+target/
+test-ledger/
+
+# Rust
+**/*.rs.bk
+
+# Node
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+.vercel
+
+# Go
+indexer/zhouyi-indexer
+
+# Cloudflare
+indexer-cf/.wrangler/
+indexer-cf/.dev.vars
+
+# OS
+.DS_Store
