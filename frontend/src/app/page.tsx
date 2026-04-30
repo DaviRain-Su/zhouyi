@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   Transaction,
@@ -17,6 +18,15 @@ import {
   parseHexagramData,
   ZHOUYI_PROGRAM_ID,
 } from "@/lib/zhouyi";
+
+const Hexagram3D = dynamic(() => import("@/components/Hexagram3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-square rounded-xl border border-ink-700 bg-[#050505] flex items-center justify-center">
+      <span className="text-ink-500 text-sm">Loading 3D...</span>
+    </div>
+  ),
+});
 
 export default function Home() {
   const { connection } = useConnection();
@@ -254,9 +264,13 @@ export default function Home() {
           )}
         </div>
 
-        {/* Right: Preview + On-chain */}
+        {/* Right: 3D Preview + On-chain */}
         <div className="space-y-6">
-          <HexagramDisplay yaos={yaos} title="Preview 预览" />
+          {/* 3D Preview */}
+          <div>
+            <h3 className="text-gold-400 font-bold text-lg mb-3 font-han">Preview 预览</h3>
+            <Hexagram3D yaos={yaos} />
+          </div>
 
           {onChain && (
             <div className="bg-ink-800 rounded-xl p-6 border border-ink-700">
@@ -266,21 +280,28 @@ export default function Home() {
                   <span className="ml-2 text-xs text-purple-400 font-normal">天命 Seed</span>
                 )}
               </h3>
-              {/* On-chain SVG */}
+              {/* 3D view of on-chain hexagram */}
+              <Hexagram3D
+                yaos={onChain.flipped ? onChain.derivedYaos : onChain.yaos}
+                derivedYaos={onChain.flipped ? undefined : onChain.derivedYaos}
+              />
+              {/* On-chain SVG (smaller, below 3D) */}
               {onChain.svg && (
                 <div
-                  className="mb-4 rounded-lg overflow-hidden border border-ink-600"
+                  className="mt-4 rounded-lg overflow-hidden border border-ink-600"
                   dangerouslySetInnerHTML={{ __html: onChain.svg }}
                 />
               )}
-              {/* Fallback yao display */}
+              {/* Fallback text display */}
               {!onChain.svg && (
-                <HexagramDisplay
-                  yaos={onChain.yaos}
-                  title=""
-                  flipped={onChain.flipped}
-                  derivedYaos={onChain.derivedYaos}
-                />
+                <div className="mt-4">
+                  <HexagramDisplay
+                    yaos={onChain.yaos}
+                    title=""
+                    flipped={onChain.flipped}
+                    derivedYaos={onChain.derivedYaos}
+                  />
+                </div>
               )}
             </div>
           )}
