@@ -7,6 +7,7 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::state::{flip_yao, is_changing, HexagramState};
+use crate::svg::hexagram::generate_hexagram_svg;
 
 /// Flip (变卦) the changing lines of a cast hexagram.
 ///
@@ -23,17 +24,13 @@ pub fn process(
     accounts: &mut [AccountView],
     _instruction_data: &[u8],
 ) -> ProgramResult {
-    // Destructure accounts
     let [owner, hexagram] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    // Verify owner is signer
     if !owner.is_signer() {
         return Err(ProgramError::MissingRequiredSignature);
     }
-
-    // Verify hexagram is writable
     if !hexagram.is_writable() {
         return Err(ProgramError::Immutable);
     }
@@ -63,12 +60,16 @@ pub fn process(
         }
     }
 
-    // Write back
+    // Generate SVG directly into account's SVG region (avoids 4KB stack allocation)
     let data = unsafe { hexagram.borrow_unchecked_mut() };
     HexagramState::set_derived_yaos(data, &derived);
     HexagramState::set_flipped(data);
+    let svg_region = &mut data[HexagramState::OFFSET_SVG
+        ..HexagramState::OFFSET_SVG + crate::state::SVG_CAPACITY];
+    let svg_len = generate_hexagram_svg(&yaos, Some(&derived), svg_region)?;
+    data[HexagramState::OFFSET_SVG_LEN..HexagramState::OFFSET_SVG_LEN + 2]
+        .copy_from_slice(&(svg_len as u16).to_le_bytes());
 
-    // Log the transformation
     log!("Hexagram transformed (之卦):");
     log!("  Original:  [{},{},{},{},{},{}]", yaos[0], yaos[1], yaos[2], yaos[3], yaos[4], yaos[5]);
     log!("  Derived:   [{},{},{},{},{},{}]", derived[0], derived[1], derived[2], derived[3], derived[4], derived[5]);

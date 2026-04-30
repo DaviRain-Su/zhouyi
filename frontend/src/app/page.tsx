@@ -6,7 +6,7 @@ import {
   Transaction,
   TransactionInstruction,
   SystemProgram,
-  PublicKey,
+  SYSVAR_SLOT_HASHES_PUBKEY,
 } from "@solana/web3.js";
 import HexagramDisplay from "@/components/HexagramDisplay";
 import {
@@ -14,7 +14,6 @@ import {
   YAO_NAMES,
   isChanging,
   findHexagramPDA,
-  HEXAGRAM_ACCOUNT_SIZE,
   parseHexagramData,
   ZHOUYI_PROGRAM_ID,
 } from "@/lib/zhouyi";
@@ -30,6 +29,8 @@ export default function Home() {
     yaos: number[];
     derivedYaos: number[];
     flipped: boolean;
+    svg: string | null;
+    source: number;
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +44,23 @@ export default function Home() {
     });
   }, []);
 
-  // Cast hexagram on-chain
+  const fetchOnChain = useCallback(async (pda: import("@solana/web3.js").PublicKey) => {
+    const accountInfo = await connection.getAccountInfo(pda);
+    if (accountInfo) {
+      const parsed = parseHexagramData(accountInfo.data as Buffer);
+      if (parsed) {
+        setOnChain({
+          yaos: parsed.yaos,
+          derivedYaos: parsed.derivedYaos,
+          flipped: parsed.flipped,
+          svg: parsed.svg,
+          source: parsed.source,
+        });
+      }
+    }
+  }, [connection]);
+
+  // Cast hexagram on-chain (user-selected yaos)
   const handleCast = useCallback(async () => {
     if (!publicKey) return;
     setLoading(true);
@@ -51,8 +68,6 @@ export default function Home() {
 
     try {
       const [pda] = findHexagramPDA(publicKey);
-
-      // Build instruction data: [0, yao0..yao5]
       const data = Buffer.from([0, ...yaos]);
       const ix = new TransactionInstruction({
         keys: [
@@ -68,19 +83,7 @@ export default function Home() {
       const sig = await sendTransaction(tx, connection);
       setStatus(`Cast! Confirming ${sig.slice(0, 12)}...`);
       await connection.confirmTransaction(sig, "confirmed");
-
-      // Fetch the PDA data
-      const accountInfo = await connection.getAccountInfo(pda);
-      if (accountInfo) {
-        const parsed = parseHexagramData(accountInfo.data as Buffer);
-        if (parsed) {
-          setOnChain({
-            yaos: parsed.yaos,
-            derivedYaos: parsed.derivedYaos,
-            flipped: parsed.flipped,
-          });
-        }
-      }
+      await fetchOnChain(pda);
       setStatus("Hexagram cast successfully!");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -88,7 +91,41 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [publicKey, yaos, sendTransaction, connection]);
+  }, [publicKey, yaos, sendTransaction, connection, fetchOnChain]);
+
+  // CastSeed — deterministic hexagram from blockhash
+  const handleCastSeed = useCallback(async () => {
+    if (!publicKey) return;
+    setLoading(true);
+    setStatus("Divining from the blockchain...");
+
+    try {
+      const [pda] = findHexagramPDA(publicKey);
+      const data = Buffer.from([2]);
+      const ix = new TransactionInstruction({
+        keys: [
+          { pubkey: publicKey, isSigner: true, isWritable: true },
+          { pubkey: pda, isSigner: false, isWritable: true },
+          { pubkey: SYSVAR_SLOT_HASHES_PUBKEY, isSigner: false, isWritable: false },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        programId: ZHOUYI_PROGRAM_ID,
+        data,
+      });
+
+      const tx = new Transaction().add(ix);
+      const sig = await sendTransaction(tx, connection);
+      setStatus(`Divining... Confirming ${sig.slice(0, 12)}...`);
+      await connection.confirmTransaction(sig, "confirmed");
+      await fetchOnChain(pda);
+      setStatus("Hexagram divined from the blockchain!");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setStatus(`Error: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [publicKey, sendTransaction, connection, fetchOnChain]);
 
   // Flip changing lines
   const handleFlip = useCallback(async () => {
@@ -98,7 +135,6 @@ export default function Home() {
 
     try {
       const [pda] = findHexagramPDA(publicKey);
-
       const data = Buffer.from([1]);
       const ix = new TransactionInstruction({
         keys: [
@@ -113,18 +149,7 @@ export default function Home() {
       const sig = await sendTransaction(tx, connection);
       setStatus(`Flipping... Confirming ${sig.slice(0, 12)}...`);
       await connection.confirmTransaction(sig, "confirmed");
-
-      const accountInfo = await connection.getAccountInfo(pda);
-      if (accountInfo) {
-        const parsed = parseHexagramData(accountInfo.data as Buffer);
-        if (parsed) {
-          setOnChain({
-            yaos: parsed.yaos,
-            derivedYaos: parsed.derivedYaos,
-            flipped: parsed.flipped,
-          });
-        }
-      }
+      await fetchOnChain(pda);
       setStatus("Lines transformed!");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -132,7 +157,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [publicKey, sendTransaction, connection]);
+  }, [publicKey, sendTransaction, connection, fetchOnChain]);
 
   const changingCount = yaos.filter(isChanging).length;
 
@@ -178,7 +203,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 mb-3">
               <button
                 onClick={randomize}
                 className="flex-1 py-2 rounded-lg bg-ink-700 text-ink-200 hover:bg-ink-600 transition-colors text-sm"
@@ -193,6 +218,14 @@ export default function Home() {
                 {loading ? "Sending..." : "Cast 占卜"}
               </button>
             </div>
+
+            <button
+              onClick={handleCastSeed}
+              disabled={!publicKey || loading}
+              className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-700 to-indigo-600 text-white font-bold hover:from-purple-600 hover:to-indigo-500 transition-colors text-sm disabled:opacity-50"
+            >
+              {loading ? "Divining..." : "Divine 天命 — let the chain decide"}
+            </button>
 
             {changingCount > 0 && (
               <p className="text-gold-500 text-xs mt-3">
@@ -226,12 +259,30 @@ export default function Home() {
           <HexagramDisplay yaos={yaos} title="Preview 预览" />
 
           {onChain && (
-            <HexagramDisplay
-              yaos={onChain.yaos}
-              title="On-Chain 链上"
-              flipped={onChain.flipped}
-              derivedYaos={onChain.derivedYaos}
-            />
+            <div className="bg-ink-800 rounded-xl p-6 border border-ink-700">
+              <h3 className="text-gold-400 font-bold text-lg mb-2 font-han">
+                On-Chain 链上
+                {onChain.source === 1 && (
+                  <span className="ml-2 text-xs text-purple-400 font-normal">天命 Seed</span>
+                )}
+              </h3>
+              {/* On-chain SVG */}
+              {onChain.svg && (
+                <div
+                  className="mb-4 rounded-lg overflow-hidden border border-ink-600"
+                  dangerouslySetInnerHTML={{ __html: onChain.svg }}
+                />
+              )}
+              {/* Fallback yao display */}
+              {!onChain.svg && (
+                <HexagramDisplay
+                  yaos={onChain.yaos}
+                  title=""
+                  flipped={onChain.flipped}
+                  derivedYaos={onChain.derivedYaos}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>
